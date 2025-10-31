@@ -1,99 +1,206 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# 🏦 Scrooge Bank API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+**A simple banking API demo built with NestJS, Prisma, and PostgreSQL**
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+This project implements a lightweight banking service with support for **checking accounts**, **personal loans**, and **basic transactions** (deposits, withdrawals, and payments).
 
-## Description
+---
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 🚀 Tech Stack
 
-## Project setup
+| Layer | Technology |
+|-------|-------------|
+| Framework | [NestJS](https://nestjs.com/) |
+| ORM | [Prisma](https://www.prisma.io/) |
+| Database | PostgreSQL |
+| Validation | [Zod](https://github.com/colinhacks/zod) |
+| Testing | Jest + Supertest |
 
-```bash
-$ pnpm install
+---
+
+## 📋 Features & User Stories
+
+### ✅ Core Functionality
+
+#### General
+- **Operator can view total bank balance.**
+- Bank starts with **$250,000** cash on hand and may leverage **25% of customer balances** for loans.
+
+#### Accounts
+- Users can **open** or **close** an account.
+- A user can only have **one open account** of a given type.
+- Account types: `checking` or `personal loan`.
+
+#### Deposits
+- Users can **deposit** into their own account.
+- Cannot deposit into another user’s account.
+- Cannot deposit if the account is closed or missing.
+
+#### Withdrawals
+- Users can **withdraw** from their own account.
+- Cannot withdraw if insufficient funds.
+- Cannot withdraw from another user’s account.
+
+#### Loans
+- Users can **apply for personal loans**.
+- Bank approves loans it can afford (cash on hand + 25% deposits).
+- Loan payments reduce loan balance and restore bank cash.
+
+#### Authentication *(Self-directed story)*
+- Simple JWT-based authentication using hashed passwords.
+- Users must log in to make account or transaction requests.
+- Operators must log in to view bank totals.
+
+---
+
+## 🧩 Data Models
+
+```prisma
+model User {
+  id         Int       @id @default(autoincrement())
+  first_name String
+  last_name  String
+  role       String
+  Account    Account[]
+}
+
+model Account {
+  id       Int     @id @default(autoincrement())
+  user     User?   @relation(fields: [user_id], references: [id])
+  user_id  Int
+  type     String
+  status   String
+  balance  Int
+}
+
+model Transaction {
+  id         Int    @id @default(autoincrement())
+  user_id    Int
+  account_id Int
+  type       String
+  amount     Int
+}
 ```
 
-## Compile and run the project
+All balances are stored in **cents** for accuracy.
 
+---
+
+## ⚙️ Setup & Installation
+
+### 1️⃣ Install dependencies
 ```bash
-# development
-$ pnpm run start
-
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+pnpm install
 ```
 
-## Run tests
+### 2️⃣ Configure environment variables
+
+Copy the example file and update it as needed:
 
 ```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
+cp .env.example .env
 ```
 
-## Deployment
+Example contents:
+```env
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/scrooge_bank?schema=public"
+PORT=3000
+```
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+> The app expects a local PostgreSQL database with a `postgres` user (`postgres:postgres`).
+> To create it manually:
+> ```bash
+> psql -h localhost -U $(whoami) -d postgres
+> CREATE ROLE postgres WITH LOGIN SUPERUSER PASSWORD 'postgres';
+> CREATE DATABASE scrooge_bank OWNER postgres;
+> ```
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
+### 3️⃣ Initialize Prisma and the database
 ```bash
-$ pnpm install -g mau
-$ mau deploy
+npx prisma migrate dev --name init
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 4️⃣ Run the application
+```bash
+pnpm start:dev
+```
 
-## Resources
+Visit [http://localhost:3000/health](http://localhost:3000/health) for a quick check.
 
-Check out a few resources that may come in handy when working with NestJS:
+---
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+## 🧠 API Overview
 
-## Support
+| Endpoint | Method | Description |
+|-----------|---------|-------------|
+| `/health` | GET | Service health check |
+| `/accounts/new` | POST | Create a new account (and user if needed) |
+| `/accounts/close` | POST | Close an account |
+| `/transactions/deposit` | POST | Deposit into account |
+| `/transactions/withdrawal` | POST | Withdraw from account |
+| `/transactions/payment` | POST | Make a loan payment |
+| `/admin/totals` | GET | View bank totals (operator only) |
+| `/login` | POST | Authenticate user and get JWT |
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+---
 
-## Stay in touch
+## 🧪 Testing
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+This project includes both **integration** and **unit** tests using Jest and Supertest.
 
-## License
+### Run all tests
+```bash
+pnpm test
+```
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+### Example tests
+- `account.controller.spec.ts`: Validates controller behavior, request validation, and HTTP responses.
+- `account.service.spec.ts`: Unit tests for database interactions and business logic.
+
+---
+
+## 🧱 Project Tasks & Progress
+
+| Task | Description | Status |
+|------|--------------|--------|
+| 1. Scaffold project | NestJS + Prisma + Jest setup | ✅ |
+| 2. Account creation | `/accounts/new` endpoint + tests | ✅ |
+| 3. Account closure | `/accounts/close` endpoint + tests | ✅ |
+| 4. Transactions (deposits) | Endpoint + balance updates |  |
+| 5. Transactions (withdrawals) | Endpoint + fund checks |  |
+| 6. Admin totals | Operator endpoint + access control |  |
+| 7. Self-directed (Auth) | JWT login + role validation |  |
+
+---
+
+## 🧾 Design & Implementation Notes
+
+- **Validation:** All request bodies are validated at the controller layer using Zod. Invalid inputs produce structured 400 responses with field-level messages.
+- **Separation of Concerns:** Controllers handle validation and routing; services handle business logic and database calls.
+- **Transactions:** All deposits/withdrawals update both user and bank balances atomically.
+- **Testing Focus:** Exhaustive integration tests for account creation and closure, and unit tests for account service logic.
+- **Scalability:** Prisma ORM and NestJS modular architecture make it easy to extend (e.g., new account types, loan rules).
+
+---
+
+## 💡 Future Enhancements
+
+- Introduce transaction history and audit trail.
+- Implement more granular account statuses (e.g., `pending`, `approved`).
+- Add rate limiting and request logging middleware.
+- Support multiple currencies.
+- Dockerize environment for instant onboarding.
+
+---
+
+## 📚 Author Notes
+
+This implementation was intentionally timeboxed (~4 hours) per the recruiter's instructions.
+Unimplemented stories are documented and prioritized in the repo's issues and project board.
+The focus was on correctness, validation, test coverage, and clean API design rather than feature completeness.
+
+---
+
+**Author:** Matt Beal
+**Framework:** NestJS + Prisma + PostgreSQL
+**License:** MIT
