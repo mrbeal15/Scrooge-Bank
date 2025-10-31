@@ -131,11 +131,11 @@ Visit [http://localhost:3000/health](http://localhost:3000/health) for a quick c
 
 ## 🧠 API Overview
 
-| Endpoint | Method | Description |
-|-----------|---------|-------------|
-| `/health` | GET | Service health check |
-| `/accounts/new` | POST | Create a new account (and user if needed) |
-| `/accounts/close` | POST | Close an account |
+| Endpoint | Method | Payload | Description |
+|-----------|---------|-------|-------------|
+| `/health` | GET | | Service health check |
+| `/accounts/new` | POST | { first_name: string, last_name: string, role: 'customer , account_type: 'checking' \| 'personal loan' } | Create a new account (and user if needed) |
+| `/accounts/close` | POST | { account_id: number } | Close an account |
 | `/transactions/deposit` | POST | Deposit into account |
 | `/transactions/withdrawal` | POST | Withdraw from account |
 | `/transactions/payment` | POST | Make a loan payment |
