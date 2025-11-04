@@ -62,9 +62,9 @@ export class AccountService {
 		});
 	}
 
-	async closeAccount(accountId: number): Promise<Account> {
+	async closeAccount(account_id: number): Promise<Account> {
 		const closedAccount = await this.prisma.account.update({
-			where: { id: accountId },
+			where: { id: account_id },
 			data: {
 				status: 'closed',
 			},
@@ -72,10 +72,10 @@ export class AccountService {
 		return closedAccount;
 	}
 
-	async getAccounts(userId: number): Promise<Account[]> {
+	async getAccounts(user_id: number): Promise<Account[]> {
 		const accounts = await this.prisma.account.findMany({
 			where: {
-				user_id: userId,
+				user_id,
 			},
 		});
 

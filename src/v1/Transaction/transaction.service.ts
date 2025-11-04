@@ -7,7 +7,7 @@ import { BadRequestException, Injectable, Logger, NotFoundException, Unauthorize
 export class TransactionService {
 	constructor(private readonly prisma: PrismaService) {}
 
-	async createWithdrawal(userId: number, data: NewTransactionInput): Promise<Transaction> {
+	async createWithdrawal(user_id: number, data: NewTransactionInput): Promise<Transaction> {
 		return this.prisma.$transaction(async (tx) => {
 			const currentBankState = await tx.bankState.findFirst();
 			const withdrawalAmount = data.amount * 100;
@@ -26,7 +26,7 @@ export class TransactionService {
 				throw new BadRequestException('Insufficient Funds. Please make a deposit.');
 			}
 
-			if (userId !== account.user_id) {
+			if (user_id !== account.user_id) {
 				throw new UnauthorizedException('Unauthorized access. Please check credentials.');
 			}
 
@@ -50,7 +50,7 @@ export class TransactionService {
 		});
 	}
 
-	async createDeposit(userId: number, data: NewTransactionInput): Promise<Transaction> {
+	async createDeposit(user_id: number, data: NewTransactionInput): Promise<Transaction> {
 		return this.prisma.$transaction(async (tx) => {
 			const depositAmount = data.amount * 100;
 			const account = await tx.account.findFirst({ where: {
@@ -61,7 +61,7 @@ export class TransactionService {
 				throw new NotFoundException('Unable to find account with provided account id.');
 			}
 
-			if (userId !== account.user_id) {
+			if (user_id !== account.user_id) {
 				throw new UnauthorizedException('Unauthorized access');
 			}
 
@@ -73,7 +73,7 @@ export class TransactionService {
 		});
 	}
 
-	async createPayment(userId: number, data: NewTransactionInput): Promise<Transaction> {
+	async createPayment(user_iFd: number, data: NewTransactionInput): Promise<Transaction> {
 		const paymentAmount = data.amount * 100;
 		return this.prisma.$transaction(async (tx) => {
 			const transaction = await tx.transaction.create({ data });
