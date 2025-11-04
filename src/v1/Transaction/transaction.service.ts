@@ -10,7 +10,7 @@ export class TransactionService {
 	async createWithdrawal(userId: number, data: NewTransactionInput): Promise<Transaction> {
 		return this.prisma.$transaction(async (tx) => {
 			const currentBankState = await tx.bankState.findFirst();
-			const withdrawalAmount = data.amount;
+			const withdrawalAmount = data.amount * 100;
 
 			if (withdrawalAmount > currentBankState.balance) {
 				throw new BadRequestException('Unable to withdrawl amount. Please see bank admin.');
@@ -35,14 +35,14 @@ export class TransactionService {
 			await tx.bankState.update({
 				where: { id: 1 },
 				data: {
-					balance: { decrement: data.amount },
+					balance: { decrement: withdrawalAmount },
 				},
 			});
 
 			await tx.account.update({
 				where: { id: data.account_id },
 				data: {
-					balance: { decrement: data.amount },
+					balance: { decrement: withdrawalAmount },
 				},
 			});
 
@@ -52,7 +52,7 @@ export class TransactionService {
 
 	async createDeposit(userId: number, data: NewTransactionInput): Promise<Transaction> {
 		return this.prisma.$transaction(async (tx) => {
-			const transaction = await tx.transaction.create({ data });
+			const depositAmount = data.amount * 100;
 			const account = await tx.account.findFirst({ where: {
 				id: data.account_id,
 			}});
@@ -65,22 +65,24 @@ export class TransactionService {
 				throw new UnauthorizedException('Unauthorized access');
 			}
 
-			await tx.bankState.update({ where: { id: 1 }, data: { balance: { increment: data.amount } }});
-			await tx.account.update({ where: { id: data.account_id }, data: { balance: { increment: data.amount } }});
+			const transaction = await tx.transaction.create({ data });
+			await tx.bankState.update({ where: { id: 1 }, data: { balance: { increment: depositAmount } }});
+			await tx.account.update({ where: { id: data.account_id }, data: { balance: { increment: depositAmount } }});
 
 			return transaction;
 		});
 	}
 
-	async createPayment(data: NewTransactionInput): Promise<Transaction> {
+	async createPayment(userId: number, data: NewTransactionInput): Promise<Transaction> {
+		const paymentAmount = data.amount * 100;
 		return this.prisma.$transaction(async (tx) => {
 			const transaction = await tx.transaction.create({ data });
 
 			await tx.account.update({ where: { id: data.account_id }, data: {
-				balance: { decrement: data.amount },
+				balance: { decrement: paymentAmount },
 			}});
 			await tx.bankState.update({ where: { id: 1 }, data: {
-				balance: { increment: data.amount },
+				balance: { increment: paymentAmount },
 			}});
 
 			return transaction;

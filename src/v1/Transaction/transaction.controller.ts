@@ -14,7 +14,7 @@ export class TransactionController {
 	@UseGuards(AuthGuard)
 	@Post('/withdrawal')
 	async createWithdrawalTransaction(@Req() req, @Body() body: NewTransactionInput): Promise<Transaction> {
-		const userId = req.body.id;
+		const userId = req.user.id;
 		const validBody = NewTransactionSchema.safeParse(body);
 
 		if (!validBody.success) {
@@ -27,7 +27,7 @@ export class TransactionController {
 	@UseGuards(AuthGuard)
 	@Post('/deposit')
 	async createDepositTransaction(@Req() req, @Body() body: NewTransactionInput): Promise<Transaction> {
-		const userId = req.body.id;
+		const userId = req.user.id;
 		const validBody = NewTransactionSchema.safeParse(body);
 
 		if (!validBody.success) {
@@ -39,13 +39,14 @@ export class TransactionController {
 
 	@UseGuards(AuthGuard)
 	@Post('/payment')
-	async createPaymentTransaction(@Body() body: NewTransactionInput): Promise<Transaction> {
+	async createPaymentTransaction(@Req() req, @Body() body: NewTransactionInput): Promise<Transaction> {
+		const userId = req.user.id;
 		const validBody = NewTransactionSchema.safeParse(body);
 
 		if (!validBody.success) {
 			throw new BadRequestException(zod.treeifyError(validBody.error));
 		}
 
-		return this.transactionService.createPayment(body);
+		return this.transactionService.createPayment(userId, body);
 	}
 }

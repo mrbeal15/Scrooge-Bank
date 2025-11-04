@@ -1,18 +1,24 @@
-import { BadRequestException, HttpException, HttpStatus, Injectable } from "@nestjs/common";
+import { BadRequestException, ConflictException, HttpException, HttpStatus, Injectable } from "@nestjs/common";
 import { NewAccountInput } from "./schemas/NewAccountSchema";
 import { PrismaService } from "../../prisma.service";
 import { Prisma } from "generated/prisma/client";
 import { Account } from "generated/prisma/browser";
 import { AuthUtil } from "../User/auth.util";
+import { JwtService } from "@nestjs/jwt";
+import { ConfigService } from "@nestjs/config";
 
 @Injectable()
 export class AccountService {
-	constructor(private prisma: PrismaService) { }
+	constructor(
+		private prisma: PrismaService,
+		private jwtService: JwtService,
+		private readonly configService: ConfigService,
+	) {}
 
-	async createNewAccount(data: NewAccountInput): Promise<Account> {
+	async createNewAccount(data: NewAccountInput): Promise<{ account: Account, token: string }> {
 		return await this.prisma.$transaction(async (tx) => {
 
-			const user = await this.prisma.user.findFirst({ where: { email: data.email }});
+			let user = await tx.user.findFirst({ where: { email: data.email }});
 			if (!user) {
 				const hashedPassword = await AuthUtil.hashPassword(data.password);
 				const userData: Prisma.UserCreateInput = {
@@ -22,16 +28,16 @@ export class AccountService {
 					password: hashedPassword,
 					role: 'customer',
 				};
-				await this.prisma.user.create({ data: userData });
+				user = await tx.user.create({ data: userData });
 			}
 
-			const accountExists = await this.prisma.account.findFirst({ where: {
+			const accountExists = await tx.account.findFirst({ where: {
 				user_id: user.id,
 				status: 'open',
 			}});
 
 			if (accountExists) {
-				throw new BadRequestException('An open account already exists for this user');
+				throw new ConflictException('An open account already exists for this user');
 			}
 
 			const accountData: Prisma.AccountCreateInput = {
@@ -45,16 +51,20 @@ export class AccountService {
 				balance: 0,
 			}
 
-			const newAccount = await this.prisma.account.create({ data: accountData });
-			return newAccount;
+			const newAccount = await tx.account.create({ data: accountData });
+			const secret = this.configService.get('JWT_SECRET');
+			const payload = { sub: user.id, id: user.id, email: user.email, role: user.role, first_name: user.first_name, last_name: user.last_name };
+			const token = await this.jwtService.signAsync(payload, { expiresIn: '30d', secret });
+			return {
+				account: newAccount,
+				token,
+			};
 		});
 	}
 
-	async closeAccount(accountId: string): Promise<Account> {
-		const where: Prisma.AccountWhereUniqueInput = { id: Number(accountId) };
-
+	async closeAccount(accountId: number): Promise<Account> {
 		const closedAccount = await this.prisma.account.update({
-			where,
+			where: { id: accountId },
 			data: {
 				status: 'closed',
 			},
