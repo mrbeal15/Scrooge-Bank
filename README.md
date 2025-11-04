@@ -146,7 +146,7 @@ Visit [http://localhost:3000/health](http://localhost:3000/health) for a quick c
 | `/transactions/deposit` | POST | { user_id: number, account_id: number, type: string, amount: number (dollars)} | Deposit into account | Yes |
 | `/transactions/withdrawal` | POST | { user_id: number, account_id: number, type: string, amount: number (dollars)} | Withdraw from account | Yes |
 | `/transactions/payment` | POST | | Make a loan payment | Yes |
-| `/admin/totals` | GET | | View bank totals (operator only) | Yes |
+| `/operator/balance` | GET | | View bank totals (operator only) | Yes |
 | `/login` | POST | { email: string, password: string } | Authenticate user and get JWT |
 
 ---
