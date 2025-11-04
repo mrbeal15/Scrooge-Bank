@@ -3,12 +3,15 @@ import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
 import { AccountController } from './account.controller';
 import { AccountService } from './account.service';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 
 const validNewAccountBody = {
 	first_name: 'Scrooge',
 	last_name: 'McDuck',
 	account_type: 'checking',
-
+	email: 'beal@example.com',
+	password: 'secret',
 };
 
 describe('AccountController (integration-ish)', () => {
@@ -17,12 +20,18 @@ describe('AccountController (integration-ish)', () => {
 		createNewAccount: jest.Mock;
 		closeAccount: jest.Mock;
 	};
+	let jwtServiceMock: {
+		verifyAsync: jest.Mock;
+	};
 
 	beforeAll(async () => {
 		accountServiceMock = {
 			createNewAccount: jest.fn(),
 			closeAccount: jest.fn(),
 		};
+		jwtServiceMock = {
+			verifyAsync: jest.fn().mockResolvedValue({}),
+		}
 
 		const moduleRef = await Test.createTestingModule({
 			controllers: [AccountController],
@@ -31,6 +40,11 @@ describe('AccountController (integration-ish)', () => {
 					provide: AccountService,
 					useValue: accountServiceMock,
 				},
+				{
+					provide: JwtService,
+					useValue: jwtServiceMock,
+				},
+				ConfigService,
 			],
 		}).compile();
 
@@ -48,6 +62,7 @@ describe('AccountController (integration-ish)', () => {
 
 			const res = await request(app.getHttpServer())
 				.post('/accounts/new')
+				.set('Authorization', `Bearer Token`)
 				.send(badBody)
 				.expect(400);
 
@@ -68,6 +83,7 @@ describe('AccountController (integration-ish)', () => {
 
 			const res = await request(app.getHttpServer())
 				.post('/accounts/new')
+				.set('Authorization', `Bearer Token`)
 				.send(validNewAccountBody)
 				.expect(201);
 
@@ -82,7 +98,8 @@ describe('AccountController (integration-ish)', () => {
 		it('400s if account_id is missing', async () => {
 			const res = await request(app.getHttpServer())
 				.post('/accounts/close')
-				.send({}) // no account_id
+				.set('Authorization', `Bearer Token`)
+				.send({})
 				.expect(400);
 
 			expect(res.body.statusCode).toBe(400);
@@ -103,6 +120,7 @@ describe('AccountController (integration-ish)', () => {
 
 			const res = await request(app.getHttpServer())
 				.post('/accounts/close')
+				.set('Authorization', `Bearer Token`)
 				.send({ account_id: '123' })
 				.expect(201);
 

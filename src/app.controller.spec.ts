@@ -1,22 +1,36 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
+import { UserService } from './v1/User/user.service';
 
 describe('AppController', () => {
-  let appController: AppController;
+	let appController: AppController;
+	let userServiceMock: {
+		login: jest.Mock,
+	};
 
-  beforeEach(async () => {
-    const app: TestingModule = await Test.createTestingModule({
-      controllers: [AppController],
-    }).compile();
+	beforeEach(async () => {
+		userServiceMock = {
+			login: jest.fn(),
+		};
 
-    appController = app.get<AppController>(AppController);
-  });
+		const app: TestingModule = await Test.createTestingModule({
+			controllers: [AppController],
+			providers: [
+				{
+					provide: UserService,
+					useValue: userServiceMock,
+				},
+			],
+		}).compile();
 
-  describe('root', () => {
-	describe('health', () => {
-		it('should return { status: 200OK, message: healthy }', () => {
-			expect(appController.healthCheck()).toEqual({ status: '200OK', message: 'healthy' });
+		appController = app.get<AppController>(AppController);
+	});
+
+	describe('root', () => {
+		describe('health', () => {
+			it('should return { status: 200OK, message: healthy }', () => {
+				expect(appController.healthCheck()).toEqual({ status: '200OK', message: 'healthy' });
+			});
 		});
 	});
-  });
 });

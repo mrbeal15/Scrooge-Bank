@@ -1,6 +1,7 @@
 import { AccountService } from './account.service';
 import { PrismaService } from '../../prisma.service';
 import { UserRole } from './account.types';
+import { AuthUtil } from '../User/auth.util';
 
 describe('AccountService', () => {
 	let service: AccountService;
@@ -18,7 +19,9 @@ describe('AccountService', () => {
 				create: jest.fn(),
 				update: jest.fn(),
 			},
+
 		};
+
 
 		service = new AccountService(prismaMock as unknown as PrismaService);
 	});
@@ -30,17 +33,18 @@ describe('AccountService', () => {
 				last_name: 'Beal',
 				account_type: 'checking',
 				role: 'customer',
+				email: 'beal@example.com',
+				password: 'secret',
 			};
 
-			// Mock prisma.user.create returning a new user record
 			prismaMock.user.create.mockResolvedValueOnce({
 				id: 42,
 				first_name: 'Matt',
 				last_name: 'Beal',
 				role: UserRole.customer,
+				email: 'beal@example.com',
 			});
 
-			// Mock prisma.account.create returning the newly created account
 			const createdAccount = {
 				id: 123,
 				user_id: 42,
@@ -49,20 +53,22 @@ describe('AccountService', () => {
 				balance: 0,
 			};
 
+			jest.spyOn(AuthUtil, 'hashPassword').mockResolvedValue('hashed_password');
+
 			prismaMock.account.create.mockResolvedValueOnce(createdAccount);
 
 			const result = await service.createNewAccount(input);
 
-			// Assert prisma.user.create was called with the expected data
 			expect(prismaMock.user.create).toHaveBeenCalledWith({
 				data: {
 					first_name: 'Matt',
 					last_name: 'Beal',
 					role: 'customer',
+					email: 'beal@example.com',
+					password: 'hashed_password',
 				},
 			});
 
-			// Assert prisma.account.create was called with the connect
 			expect(prismaMock.account.create).toHaveBeenCalledWith({
 				data: {
 					user: {
@@ -76,7 +82,6 @@ describe('AccountService', () => {
 				},
 			});
 
-			// The service should return the created account
 			expect(result).toEqual(createdAccount);
 		});
 	});
@@ -93,7 +98,6 @@ describe('AccountService', () => {
 
 			const result = await service.closeAccount('123');
 
-			// AccountService currently does Number(accountId)
 			expect(prismaMock.account.update).toHaveBeenCalledWith({
 				where: { id: 123 },
 				data: { status: 'closed' },
