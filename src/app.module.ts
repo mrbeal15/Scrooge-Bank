@@ -6,6 +6,7 @@ import { ConfigModule } from '@nestjs/config';
 import { UserModule } from './v1/User/user.module';
 import { UserService } from './v1/User/user.service';
 import { TransactionModule } from './v1/Transaction/transaction.module';
+import { OperatorModule } from './v1/Operator/operator.module';
 
 @Module({
 	imports: [
@@ -13,6 +14,7 @@ import { TransactionModule } from './v1/Transaction/transaction.module';
 		isGlobal: true,
 		}),
 		AccountModule,
+		OperatorModule,
 		TransactionModule,
 		UserModule,
 	],
