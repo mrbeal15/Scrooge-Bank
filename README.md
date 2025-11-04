@@ -80,6 +80,11 @@ model Transaction {
   type       String
   amount     Int
 }
+
+model BankState {
+  id        Int
+  balance   Int
+}
 ```
 
 All balances are stored in **cents** for accuracy.
@@ -115,9 +120,10 @@ PORT=3000
 > CREATE DATABASE scrooge_bank OWNER postgres;
 > ```
 
-### 3️⃣ Initialize Prisma and the database
+### 3️⃣ Initialize Prisma and the database & seed database
 ```bash
 npx prisma migrate dev --name init
+npx prisma db seed
 ```
 
 ### 4️⃣ Run the application
@@ -131,16 +137,16 @@ Visit [http://localhost:3000/health](http://localhost:3000/health) for a quick c
 
 ## 🧠 API Overview
 
-| Endpoint | Method | Payload | Description |
-|-----------|---------|-------|-------------|
-| `/health` | GET | | Service health check |
-| `/accounts/new` | POST | { first_name: string, last_name: string, role: 'customer , account_type: 'checking' \| 'personal loan' } | Create a new account (and user if needed) |
-| `/accounts/close` | POST | { account_id: number } | Close an account |
-| `/transactions/deposit` | POST | Deposit into account |
-| `/transactions/withdrawal` | POST | Withdraw from account |
-| `/transactions/payment` | POST | Make a loan payment |
-| `/admin/totals` | GET | View bank totals (operator only) |
-| `/login` | POST | Authenticate user and get JWT |
+| Endpoint | Method | Payload | Description | Token Required |
+|-----------|---------|-------|-------------|----------------|
+| `/health` | GET | | Service health check ||
+| `/accounts/new` | POST | { first_name: string, last_name: string, email: string, password: string, role: 'customer , account_type: 'checking' \| 'personal loan' } | Create a new account (and user if needed) ||
+| `/accounts/close` | POST | { account_id: number } | Close an account | Yes |
+| `/transactions/deposit` | POST | { user_id: number, account_id: number, type: string, amount: number (dollars)} | Deposit into account | Yes |
+| `/transactions/withdrawal` | POST | { user_id: number, account_id: number, type: string, amount: number (dollars)} | Withdraw from account | Yes |
+| `/transactions/payment` | POST | | Make a loan payment | Yes |
+| `/admin/totals` | GET | | View bank totals (operator only) | Yes |
+| `/login` | POST | { email: string, password: string } | Authenticate user and get JWT |
 
 ---
 
@@ -166,10 +172,10 @@ pnpm test
 | 1. Scaffold project | NestJS + Prisma + Jest setup | ✅ |
 | 2. Account creation | `/accounts/new` endpoint + tests | ✅ |
 | 3. Account closure | `/accounts/close` endpoint + tests | ✅ |
-| 4. Transactions (deposits) | Endpoint + balance updates |  |
-| 5. Transactions (withdrawals) | Endpoint + fund checks |  |
+| 4. Transactions (deposits) | Endpoint + balance updates | ✅ |
+| 5. Transactions (withdrawals) | Endpoint + fund checks | ✅ |
 | 6. Admin totals | Operator endpoint + access control |  |
-| 7. Self-directed (Auth) | JWT login + role validation |  |
+| 7. Self-directed (Auth) | JWT login + role validation | ✅ |
 
 ---
 
