@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Post, Req, UnauthorizedException, UseGuards } from '@nestjs/common';
 import { NewAccountInput, NewAccountSchema } from './schemas/NewAccountSchema';
 import { AccountService } from './account.service';
 import { Account } from 'generated/prisma/client';
@@ -8,6 +8,18 @@ import { AuthGuard } from '../../auth.guard';
 @Controller('accounts')
 export class AccountController {
 	constructor(private readonly accountService: AccountService) { }
+
+	@UseGuards(AuthGuard)
+	@Get('/')
+	async getAccounts(@Req() req): Promise<Account[]> {
+		const user_id = req.user.id;
+
+		if (!user_id) {
+			throw new UnauthorizedException('Unable to access account');
+		}
+
+		return this.accountService.getAccounts(user_id);
+	}
 
 	@Post('/new')
 	async createNewAccount(@Body() body: NewAccountInput): Promise<{account: Account, token: string }> {
