@@ -1,8 +1,9 @@
-import { BadRequestException, Body, Controller, Post } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { NewAccountInput, NewAccountSchema } from './schemas/NewAccountSchema';
 import { AccountService } from './account.service';
 import { Account } from 'generated/prisma/client';
 import zod from 'zod';
+import { AuthGuard } from '../../auth.guard';
 
 @Controller('accounts')
 export class AccountController {
@@ -19,6 +20,7 @@ export class AccountController {
 		return this.accountService.createNewAccount(body);
 	}
 
+	@UseGuards(AuthGuard)
 	@Post('/close')
 	async closeAccount(@Body() body: { account_id: string}): Promise<Account> {
 		if (!body.account_id) {

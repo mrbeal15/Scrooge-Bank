@@ -7,7 +7,9 @@ export const NewAccountSchema = z.object({
 	role: z.string().optional(),
 	// role: z.enum(UserRole), TODO: Fix
 	account_type: z.string(),
-	// account_type: z.enum(AccountType), TODO: Fix
+	// account_type: z.enum(AccountType), TODO: Fix,
+	email: z.string(),
+	password: z.string(),
 });
 
 export type NewAccountInput = z.infer<typeof NewAccountSchema>;
