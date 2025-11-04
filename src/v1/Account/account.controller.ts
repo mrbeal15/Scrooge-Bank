@@ -10,7 +10,7 @@ export class AccountController {
 	constructor(private readonly accountService: AccountService) { }
 
 	@Post('/new')
-	async createNewAccount(@Body() body: NewAccountInput): Promise<Account> {
+	async createNewAccount(@Body() body: NewAccountInput): Promise<{account: Account, token: string }> {
 		const validBody = NewAccountSchema.safeParse(body);
 
 		if (!validBody.success) {
@@ -22,7 +22,7 @@ export class AccountController {
 
 	@UseGuards(AuthGuard)
 	@Post('/close')
-	async closeAccount(@Body() body: { account_id: string}): Promise<Account> {
+	async closeAccount(@Body() body: { account_id: number}): Promise<Account> {
 		if (!body.account_id) {
 			throw new BadRequestException('account_id is required');
 		}

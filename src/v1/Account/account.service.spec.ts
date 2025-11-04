@@ -2,16 +2,38 @@ import { AccountService } from './account.service';
 import { PrismaService } from '../../prisma.service';
 import { UserRole } from './account.types';
 import { AuthUtil } from '../User/auth.util';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 
 describe('AccountService', () => {
 	let service: AccountService;
 	let prismaMock: {
 		user: { create: jest.Mock };
 		account: { create: jest.Mock; update: jest.Mock };
+		$transaction: any,
+	};
+	let tx;
+	let jwtServiceMock: {
+		signAsync: jest.Mock,
+	};
+	let configServiceMock: {
+		get: jest.Mock,
 	};
 
 	beforeEach(() => {
+		tx = {
+			user: {
+				findFirst: jest.fn(),
+				create: jest.fn(),
+			},
+			account: {
+				findFirst: jest.fn(),
+				create: jest.fn(),
+				update: jest.fn(),
+			},
+		};
 		prismaMock = {
+			$transaction: jest.fn((cb: any) => cb(tx)),
 			user: {
 				create: jest.fn(),
 			},
@@ -19,11 +41,19 @@ describe('AccountService', () => {
 				create: jest.fn(),
 				update: jest.fn(),
 			},
-
+		};
+		jwtServiceMock = {
+			signAsync: jest.fn().mockResolvedValue('token'),
+		};
+		configServiceMock = {
+			get: jest.fn().mockReturnValue('shhh'),
 		};
 
-
-		service = new AccountService(prismaMock as unknown as PrismaService);
+		service = new AccountService(
+			prismaMock as unknown as PrismaService,
+			jwtServiceMock as unknown as JwtService,
+			configServiceMock as unknown as ConfigService,
+		);
 	});
 
 	describe('createNewAccount', () => {
@@ -37,13 +67,19 @@ describe('AccountService', () => {
 				password: 'secret',
 			};
 
-			prismaMock.user.create.mockResolvedValueOnce({
+			tx.user.findFirst.mockResolvedValueOnce(null);
+
+			jest.spyOn(AuthUtil, 'hashPassword').mockResolvedValue('hashed_password');
+
+			tx.user.create.mockResolvedValueOnce({
 				id: 42,
 				first_name: 'Matt',
 				last_name: 'Beal',
 				role: UserRole.customer,
 				email: 'beal@example.com',
 			});
+
+			tx.account.findFirst.mockResolvedValueOnce(null);
 
 			const createdAccount = {
 				id: 123,
@@ -53,13 +89,11 @@ describe('AccountService', () => {
 				balance: 0,
 			};
 
-			jest.spyOn(AuthUtil, 'hashPassword').mockResolvedValue('hashed_password');
-
-			prismaMock.account.create.mockResolvedValueOnce(createdAccount);
+			tx.account.create.mockResolvedValueOnce(createdAccount);
 
 			const result = await service.createNewAccount(input);
 
-			expect(prismaMock.user.create).toHaveBeenCalledWith({
+			expect(tx.user.create).toHaveBeenCalledWith({
 				data: {
 					first_name: 'Matt',
 					last_name: 'Beal',
@@ -69,7 +103,7 @@ describe('AccountService', () => {
 				},
 			});
 
-			expect(prismaMock.account.create).toHaveBeenCalledWith({
+			expect(tx.account.create).toHaveBeenCalledWith({
 				data: {
 					user: {
 						connect: {
@@ -82,7 +116,7 @@ describe('AccountService', () => {
 				},
 			});
 
-			expect(result).toEqual(createdAccount);
+			expect(result).toEqual({ account: createdAccount, token: 'token' });
 		});
 	});
 
@@ -96,7 +130,7 @@ describe('AccountService', () => {
 				balance: 0,
 			});
 
-			const result = await service.closeAccount('123');
+			const result = await service.closeAccount(123);
 
 			expect(prismaMock.account.update).toHaveBeenCalledWith({
 				where: { id: 123 },
