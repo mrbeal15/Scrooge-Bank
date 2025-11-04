@@ -14,39 +14,39 @@ export class TransactionController {
 	@UseGuards(AuthGuard)
 	@Post('/withdrawal')
 	async createWithdrawalTransaction(@Req() req, @Body() body: NewTransactionInput): Promise<Transaction> {
-		const userId = req.user.id;
+		const user_id = req.user.id;
 		const validBody = NewTransactionSchema.safeParse(body);
 
 		if (!validBody.success) {
 			throw new BadRequestException(zod.treeifyError(validBody.error));
 		}
 
-		return this.transactionService.createWithdrawal(userId, body);
+		return this.transactionService.createWithdrawal(user_id, body);
 	}
 
 	@UseGuards(AuthGuard)
 	@Post('/deposit')
 	async createDepositTransaction(@Req() req, @Body() body: NewTransactionInput): Promise<Transaction> {
-		const userId = req.user.id;
+		const user_id = req.user.id;
 		const validBody = NewTransactionSchema.safeParse(body);
 
 		if (!validBody.success) {
 			throw new BadRequestException(zod.treeifyError(validBody.error));
 		}
 
-		return this.transactionService.createDeposit(userId, body);
+		return this.transactionService.createDeposit(user_id, body);
 	}
 
 	@UseGuards(AuthGuard)
 	@Post('/payment')
 	async createPaymentTransaction(@Req() req, @Body() body: NewTransactionInput): Promise<Transaction> {
-		const userId = req.user.id;
+		const user_id = req.user.id;
 		const validBody = NewTransactionSchema.safeParse(body);
 
 		if (!validBody.success) {
 			throw new BadRequestException(zod.treeifyError(validBody.error));
 		}
 
-		return this.transactionService.createPayment(userId, body);
+		return this.transactionService.createPayment(user_id, body);
 	}
 }

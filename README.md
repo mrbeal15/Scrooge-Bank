@@ -142,6 +142,7 @@ Visit [http://localhost:3000/health](http://localhost:3000/health) for a quick c
 | `/health` | GET | | Service health check ||
 | `/accounts/new` | POST | { first_name: string, last_name: string, email: string, password: string, role: 'customer , account_type: 'checking' \| 'personal loan' } | Create a new account (and user if needed) ||
 | `/accounts/close` | POST | { account_id: number } | Close an account | Yes |
+| `/accounts` | GET | | Get all accounts | Yes |
 | `/transactions/deposit` | POST | { user_id: number, account_id: number, type: string, amount: number (dollars)} | Deposit into account | Yes |
 | `/transactions/withdrawal` | POST | { user_id: number, account_id: number, type: string, amount: number (dollars)} | Withdraw from account | Yes |
 | `/transactions/payment` | POST | | Make a loan payment | Yes |
