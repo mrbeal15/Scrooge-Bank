@@ -71,4 +71,14 @@ export class AccountService {
 		});
 		return closedAccount;
 	}
+
+	async getAccounts(userId: number): Promise<Account[]> {
+		const accounts = await this.prisma.account.findMany({
+			where: {
+				user_id: userId,
+			},
+		});
+
+		return accounts;
+	}
 };
